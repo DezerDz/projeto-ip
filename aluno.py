@@ -1,6 +1,6 @@
 import pygame
 
-# valores da física (em pixels e segundos)
+
 GRAVIDADE = 2200
 VELOCIDADE = 340
 FORCA_PULO = 1000
@@ -9,7 +9,7 @@ VELOCIDADE_MAX_QUEDA = 1400
 
 class Aluno:
     def __init__(self, x, y):
-        # x e y são a posição dos pés do aluno
+
         self.x = x
         self.y = y
         self.largura = 36
@@ -29,7 +29,7 @@ class Aluno:
             self.altura
         )
 
-    # lê o teclado e decide pra onde o aluno vai
+
     def mover(self):
         teclas = pygame.key.get_pressed()
 
@@ -39,23 +39,23 @@ class Aluno:
         if teclas[pygame.K_RIGHT] or teclas[pygame.K_d]:
             self.velocidade_x += VELOCIDADE
 
-    # só pode pular se estiver pisando em alguma coisa
+
     def pular(self):
         if self.no_chao:
             self.velocidade_y = -FORCA_PULO
             self.no_chao = False
 
-    # a gravidade puxa o aluno pra baixo o tempo todo
+
     def aplicar_gravidade(self, dt):
         self.velocidade_y += GRAVIDADE * dt
         if self.velocidade_y > VELOCIDADE_MAX_QUEDA:
             self.velocidade_y = VELOCIDADE_MAX_QUEDA
 
-    # se o aluno estava em cima de uma superfície e passou por ela caindo, ele pousa
+
     def checar_colisao(self, y_antes, superficies):
         self.no_chao = False
 
-        # subindo, ele atravessa as plataformas por baixo
+
         if self.velocidade_y < 0:
             return
 
@@ -72,7 +72,7 @@ class Aluno:
                 self.no_chao = True
                 return
 
-    # não deixa o aluno sair pelos lados do mundo
+
     def limitar_bordas(self, largura_mundo):
         metade = self.largura / 2
         if self.x < metade:
@@ -91,12 +91,12 @@ class Aluno:
         self.checar_colisao(y_antes, superficies)
         self.limitar_bordas(largura_mundo)
 
-    # camerax vem do cenário, pra desenhar o aluno no lugar certo da tela
+
     def draw(self, tela, camerax):
         rect = self.get_rect().move(-camerax, 0)
 
-        # corpo
+
         pygame.draw.rect(tela, self.cor, (rect.x, rect.y + 20, rect.width, rect.height - 20), border_radius=6)
 
-        # cabeça
+
         pygame.draw.circle(tela, (241, 194, 150), (rect.centerx, rect.y + 11), 11)
