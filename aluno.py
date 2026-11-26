@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pygame
 
 
@@ -19,7 +21,19 @@ class Aluno:
         self.velocidade_y = 0
         self.no_chao = False
 
-        self.cor = (45, 98, 180)
+        caminho_sprite = (
+            Path(__file__).resolve().parent
+            / "assets" / "sprites" / "aluno" / "parado.png"
+        )
+        imagem = pygame.image.load(str(caminho_sprite)).convert_alpha()
+        # Remove a margem transparente antes de ajustar o tamanho.
+        imagem = imagem.subsurface(imagem.get_bounding_rect()).copy()
+        largura_sprite = round(imagem.get_width() * self.altura / imagem.get_height())
+        self.imagem_direita = pygame.transform.smoothscale(
+            imagem, (largura_sprite, self.altura)
+        )
+        self.imagem_esquerda = pygame.transform.flip(self.imagem_direita, True, False)
+        self.olhando_direita = True
 
     def get_rect(self):
         return pygame.Rect(
@@ -38,6 +52,11 @@ class Aluno:
             self.velocidade_x -= VELOCIDADE
         if teclas[pygame.K_RIGHT] or teclas[pygame.K_d]:
             self.velocidade_x += VELOCIDADE
+
+        if self.velocidade_x > 0:
+            self.olhando_direita = True
+        elif self.velocidade_x < 0:
+            self.olhando_direita = False
 
 
     def pular(self):
@@ -93,10 +112,8 @@ class Aluno:
 
 
     def draw(self, tela, camerax):
-        rect = self.get_rect().move(-camerax, 0)
-
-
-        pygame.draw.rect(tela, self.cor, (rect.x, rect.y + 20, rect.width, rect.height - 20), border_radius=6)
-
-
-        pygame.draw.circle(tela, (241, 194, 150), (rect.centerx, rect.y + 11), 11)
+        imagem = self.imagem_direita if self.olhando_direita else self.imagem_esquerda
+        rect = imagem.get_rect(
+            midbottom=(round(self.x - camerax), round(self.y))
+        )
+        tela.blit(imagem, rect)
