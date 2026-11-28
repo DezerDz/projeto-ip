@@ -21,19 +21,32 @@ class Aluno:
         self.velocidade_y = 0
         self.no_chao = False
 
-        caminho_sprite = (
-            Path(__file__).resolve().parent
-            / "assets" / "sprites" / "aluno" / "parado.png"
+        pasta_sprites = Path(__file__).resolve().parent / "assets" / "sprites" / "aluno"
+        nomes = ["parado", "andando_01", "andando_02", "andando_03", "andando_04", "pulando"]
+        imagens = {
+            nome: pygame.image.load(str(pasta_sprites / f"{nome}.png")).convert_alpha()
+            for nome in nomes
+        }
+        # Usa o mesmo recorte e escala para todas as poses, evitando saltos no tamanho.
+        recorte = imagens["parado"].get_bounding_rect()
+        for imagem in imagens.values():
+            recorte.union_ip(imagem.get_bounding_rect())
+        tamanho = (
+            round(recorte.width * self.altura / recorte.height),
+            self.altura,
         )
-        imagem = pygame.image.load(str(caminho_sprite)).convert_alpha()
-        # Remove a margem transparente antes de ajustar o tamanho.
-        imagem = imagem.subsurface(imagem.get_bounding_rect()).copy()
-        largura_sprite = round(imagem.get_width() * self.altura / imagem.get_height())
-        self.imagem_direita = pygame.transform.smoothscale(
-            imagem, (largura_sprite, self.altura)
-        )
-        self.imagem_esquerda = pygame.transform.flip(self.imagem_direita, True, False)
+        self.sprites_direita = {
+            nome: pygame.transform.smoothscale(imagem.subsurface(recorte), tamanho)
+            for nome, imagem in imagens.items()
+        }
+        self.sprites_esquerda = {
+            nome: pygame.transform.flip(imagem, True, False)
+            for nome, imagem in self.sprites_direita.items()
+        }
         self.olhando_direita = True
+        self.sprite_atual = "parado"
+        self.tempo_animacao = 0
+        self.intervalo_animacao = 0.12
 
     def get_rect(self):
         return pygame.Rect(
@@ -109,10 +122,24 @@ class Aluno:
 
         self.checar_colisao(y_antes, superficies)
         self.limitar_bordas(largura_mundo)
+        self.atualizar_animacao(dt)
 
+
+    def atualizar_animacao(self, dt):
+        if not self.no_chao:
+            self.sprite_atual = "pulando"
+            self.tempo_animacao = 0
+        elif self.velocidade_x != 0:
+            self.tempo_animacao = (self.tempo_animacao + dt) % (4 * self.intervalo_animacao)
+            quadro = int(self.tempo_animacao / self.intervalo_animacao) + 1
+            self.sprite_atual = f"andando_{quadro:02d}"
+        else:
+            self.sprite_atual = "parado"
+            self.tempo_animacao = 0
 
     def draw(self, tela, camerax):
-        imagem = self.imagem_direita if self.olhando_direita else self.imagem_esquerda
+        sprites = self.sprites_direita if self.olhando_direita else self.sprites_esquerda
+        imagem = sprites[self.sprite_atual]
         rect = imagem.get_rect(
             midbottom=(round(self.x - camerax), round(self.y))
         )
